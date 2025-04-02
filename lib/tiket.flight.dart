@@ -1,8 +1,85 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'tiket.dart';
 
-class TicketFlightPage extends StatelessWidget {
+class TicketFlightPage extends StatefulWidget {
   const TicketFlightPage({super.key});
+
+  @override
+  State<TicketFlightPage> createState() => _TicketFlightPageState();
+}
+
+class _TicketFlightPageState extends State<TicketFlightPage> {
+  final TextEditingController originController = TextEditingController(text: 'CGK');
+  final TextEditingController destinationController = TextEditingController(text: 'DPS');
+  DateTime selectedDate = DateTime.now().add(Duration(days: 1));
+
+  Widget _buildTextInput(String label, TextEditingController controller, String assetPath) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Image.asset(assetPath, width: 20, height: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      hintText: 'Masukkan...',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDatePicker(BuildContext context) {
+    return InkWell(
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: selectedDate,
+          firstDate: DateTime.now(),
+          lastDate: DateTime.now().add(const Duration(days: 365)),
+        );
+        if (picked != null) {
+          setState(() {
+            selectedDate = picked;
+          });
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Image.asset('assets/icon.png', width: 20, height: 20),
+            const SizedBox(width: 8),
+            Text(DateFormat('EEEE, dd MMM yyyy').format(selectedDate)),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +91,7 @@ class TicketFlightPage extends StatelessWidget {
             left: 0,
             right: 0,
             child: Image.asset(
-              'assets/airport.png', // Sesuai dengan aset yang ada
+              'assets/airport.png',
               height: 250,
               fit: BoxFit.cover,
             ),
@@ -35,16 +112,9 @@ class TicketFlightPage extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildInputField("Dari", "Jakarta (JKT)", 'assets/departure.png'),
-                  _buildInputField("Ke", "Bali (DPS)", 'assets/arrival.png'),
-                  _buildInputField("Tanggal Keberangkatan", "Selasa, 24 Des 2024", 'assets/icon.png'),
-                  Row(
-                    children: [
-                      Expanded(child: _buildInputField("Penumpang", "1 Orang", 'assets/icon (1).png')),
-                      const SizedBox(width: 8),
-                      Expanded(child: _buildInputField("Kelas Penerbangan", "Bisnis", 'assets/icon.png')),
-                    ],
-                  ),
+                  _buildTextInput("Dari", originController, 'assets/departure.png'),
+                  _buildTextInput("Ke", destinationController, 'assets/arrival.png'),
+                  _buildDatePicker(context),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -55,7 +125,13 @@ class TicketFlightPage extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => TicketPage()),
+                        MaterialPageRoute(
+                          builder: (context) => TicketPage(
+                            origin: originController.text,
+                            destination: destinationController.text,
+                            departureDate: DateFormat('yyyy-MM-dd').format(selectedDate),
+                          ),
+                        ),
                       );
                     },
                     child: const Text("Cari"),
@@ -72,40 +148,10 @@ class TicketFlightPage extends StatelessWidget {
                 Navigator.pop(context);
               },
               child: Image.asset(
-                'assets/icon_2.png', // Tombol kembali sesuai permintaan
+                'assets/icon_2.png',
                 height: 24,
                 width: 24,
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInputField(String label, String value, String assetPath) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Image.asset(assetPath, width: 20, height: 20),
-                const SizedBox(width: 8),
-                Text(value),
-              ],
             ),
           ),
         ],

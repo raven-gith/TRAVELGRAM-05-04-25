@@ -7,6 +7,10 @@ import 'hotel.dart';
 import 'wisata.dart';
 import 'bus.dart';
 import 'keretaapi.dart';
+import 'komen.dart  ';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -25,6 +29,91 @@ class _HomePageState extends State<HomePage> {
     'assets/sindoro.jpg': 12,
     'assets/nimo.png': 18,
   };
+  List<Map<String, dynamic>> userPosts = [];
+  void _openPostDialog() {
+  final captionController = TextEditingController();
+  XFile? imageFile;
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              top: 16,
+              left: 16,
+              right: 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Buat Postingan',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: captionController,
+                  decoration: const InputDecoration(labelText: 'Caption'),
+                ),
+                const SizedBox(height: 10),
+                imageFile != null
+                    ? Image.file(File(imageFile!.path), height: 150)
+                    : TextButton.icon(
+                        onPressed: () async {
+                          final picker = ImagePicker();
+                          final picked = await picker.pickImage(source: ImageSource.gallery);
+                          if (picked != null) {
+                            setModalState(() {
+                              imageFile = picked;
+                            });
+                          }
+                        },
+                        icon: const Icon(Icons.image),
+                        label: const Text('Pilih Gambar'),
+                      ),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    if (imageFile != null) {
+                      setState(() {
+                        userPosts.insert(0, {
+                          'username': 'Kamu',
+                          'location': 'Lokasi default',
+                          'caption': captionController.text,
+                          'imageFile': imageFile!.path,
+                        });
+                      });
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('Post'),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+    String getPostIdFromImage(String imagePath) {
+    switch (imagePath) {
+      case 'assets/sindoro.jpg':
+        return '1';
+      case 'assets/nimo.png':
+        return '2';
+      default:
+        return '0';
+    }
+  }
+
 
   void toggleLike(String imagePath) {
     setState(() {
@@ -39,7 +128,8 @@ class _HomePageState extends State<HomePage> {
       commentCounts[imagePath] = (commentCounts[imagePath] ?? 0) + 1;
     });
   }
-Widget _buildPost(String username, String location, String imagePath) {
+Widget _buildPost(String username, String location, String imagePath,
+    {String? caption, bool isFile = false}) {
   return Card(
     margin: const EdgeInsets.symmetric(vertical: 10),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -56,12 +146,57 @@ Widget _buildPost(String username, String location, String imagePath) {
             topLeft: Radius.circular(15),
             topRight: Radius.circular(15),
           ),
-          child: Image.asset(imagePath, fit: BoxFit.cover),
+          child: isFile
+              ? Image.file(File(imagePath), fit: BoxFit.cover)
+              : Image.asset(imagePath, fit: BoxFit.cover),
         ),
+        if (caption != null && caption.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(caption),
+          ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            TextButton.icon(
+              onPressed: () {
+                toggleLike(imagePath);
+              },
+              icon: Image.asset(
+                'assets/heart.png',
+                width: 20,
+                height: 20,
+                color: likedPosts[imagePath] ?? false ? Colors.red : Colors.black,
+              ),
+              label: Text('${likeCounts[imagePath] ?? 0}'),
+            ),
+            TextButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        CommentPage(postId: getPostIdFromImage(imagePath)),
+                  ),
+                );
+              },
+              icon: Image.asset(
+                'assets/comment-alt-dots.png',
+                width: 20,
+                height: 20,
+                color: Colors.black,
+              ),
+              label: const Text('Komentar'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
       ],
     ),
   );
 }
+
 
   @override
   Widget build(BuildContext context) {
@@ -107,25 +242,35 @@ Widget _buildPost(String username, String location, String imagePath) {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Column(
+  padding: const EdgeInsets.all(10.0),
+  child: Column(
+    children: [
+      Expanded(
+        child: ListView(
           children: [
-            Expanded(
-              child: ListView(
-                children: [
-                  _buildPost('Rizky', 'Gunung Sindoro', 'assets/sindoro.jpg'),
-                  _buildPost('Rizka', 'Gunung Merbabu', 'assets/nimo.png'),
-                ],
-              ),
-            ),
+            ...userPosts.map((post) => _buildPost(
+                  post['username'],
+                  post['location'],
+                  post['imageFile'],
+                  caption: post['caption'],
+                  isFile: true,
+                )),
+            _buildPost('Rizky', 'Gunung Sindoro', 'assets/sindoro.jpg'),
+            _buildPost('Rizka', 'Gunung Merbabu', 'assets/nimo.png'),
           ],
         ),
       ),
+    ],
+  ),
+),
+
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: Colors.white,
-        child: Image.asset('assets/plus.png', width: 30, height: 30),
-      ),
+      onPressed: () {
+      _openPostDialog();
+    },
+      backgroundColor: Colors.white,
+      child: Image.asset('assets/plus.png', width: 30, height: 30),
+    ),
     );
   }
 

@@ -24,7 +24,12 @@ class MyApp extends StatelessWidget {
         '/settings': (context) => const SettingsPage(),
         '/login': (context) => const LoginPage(),
         '/forgot-password': (context) => const ForgotPasswordPage(),
-        '/tiket': (context) => TicketPage(), // Tambahkan ini
+        '/tiket': (context) => TicketPage(
+  origin: 'CGK',
+  destination: 'DPS',
+  departureDate: '2025-04-05',
+),
+
       },
       initialRoute: '/',
     );
